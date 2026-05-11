@@ -2,6 +2,7 @@
 name = "code-graph-tool"
 version = "0.1.0"
 edition = "2021"
+description = "Multi-language code parser (Python, Rust, JavaScript/TypeScript, Go, Java, C/C++) that extracts dependency graphs and stores them locally in SQLite. Provides three access methods: CLI for direct queries, REST API for programmatic use, and MCP server for IDE integration with Claude or Cursor."
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
@@ -14,6 +15,7 @@ tree-sitter-typescript = "0"
 tree-sitter-go = "0"
 tree-sitter-cpp = "0"
 tree-sitter-c = "0"
+tree-sitter-java = "0"
 petgraph = "0.6"
 sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "sqlite"] }
 reqwest = { version = "0.11", features = ["json"] }
