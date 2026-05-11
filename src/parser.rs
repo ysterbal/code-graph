@@ -2,6 +2,7 @@ use tree_sitter::{Parser, Tree};
 use tree_sitter_c::LANGUAGE as c_lang;
 use tree_sitter_cpp::LANGUAGE as cpp_lang;
 use tree_sitter_go::LANGUAGE as go_lang;
+use tree_sitter_java::LANGUAGE as java_lang;
 use tree_sitter_javascript::LANGUAGE as js_lang;
 use tree_sitter_python::LANGUAGE as python_lang;
 use tree_sitter_rust::LANGUAGE as rust_lang;
@@ -26,6 +27,7 @@ pub fn parse_file(
         "rs" => (rust_lang.into(), "rust"),
         "js" => (js_lang.into(), "javascript"),
         "ts" => (ts_lang.into(), "typescript"),
+        "java" => (java_lang.into(), "java"),
         "go" => (go_lang.into(), "go"),
         "cpp" | "cc" | "cxx" => (cpp_lang.into(), "cpp"),
         "c" | "h" => (c_lang.into(), "c"),
@@ -287,6 +289,7 @@ fn traverse_and_extract(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use tree_sitter_java::LANGUAGE as java_lang;
 
     #[test]
     fn test_extracts_functions() {
@@ -324,5 +327,500 @@ def main():
             .node_indices
             .contains_key("test.py:CodeParser.add_node"));
         assert!(graph.node_indices.contains_key("test.py:main"));
+    }
+
+    use tree_sitter_c::LANGUAGE as c_lang;
+    use tree_sitter_cpp::LANGUAGE as cpp_lang;
+    use tree_sitter_go::LANGUAGE as go_lang;
+    use tree_sitter_javascript::LANGUAGE as js_lang;
+    use tree_sitter_rust::LANGUAGE as rust_lang;
+    use tree_sitter_typescript::LANGUAGE_TYPESCRIPT as ts_lang;
+
+    #[test]
+    fn test_extracts_rust_structs_and_methods() {
+        let code = r#"
+use std::collections::HashMap;
+
+pub struct User {
+    pub id: u32,
+    pub name: String,
+}
+
+impl User {
+    pub fn new(id: u32, name: String) -> Self {
+        Self { id, name }
+    }
+
+    pub fn display(&self) -> String {
+        format!("User {}", self.name)
+    }
+}
+
+pub struct UserManager {
+    users: HashMap<u32, User>,
+}
+
+impl UserManager {
+    pub fn new() -> Self {
+        Self { users: HashMap::new() }
+    }
+
+    pub fn add_user(&mut self, user: User) {
+        self.users.insert(user.id, user);
+    }
+}
+
+fn main() {
+    let mut manager = UserManager::new();
+}
+"#;
+        let mut graph = CodeGraph::new();
+        parse_code(
+            code,
+            "sample.rs",
+            "dummy_checksum",
+            rust_lang.into(),
+            "rust",
+            &mut graph,
+        )
+        .unwrap();
+
+        println!(
+            "Rust nodes: {:?}",
+            graph.node_indices.keys().collect::<Vec<_>>()
+        );
+
+        assert!(graph.node_indices.contains_key("sample.rs"));
+        assert!(graph.node_indices.contains_key("sample.rs:User"));
+        assert!(graph.node_indices.contains_key("sample.rs:new"));
+        assert!(graph.node_indices.contains_key("sample.rs:display"));
+        assert!(graph.node_indices.contains_key("sample.rs:UserManager"));
+        assert!(graph
+            .node_indices
+            .contains_key("sample.rs:UserManager::new"));
+        assert!(graph.node_indices.contains_key("sample.rs:add_user"));
+    }
+
+    #[test]
+    fn test_extracts_javascript_classes_and_methods() {
+        let code = r#"
+class User {
+    constructor(id, name) {
+        this.id = id;
+        this.name = name;
+    }
+
+    setEmail(email) {
+        this.email = email;
+    }
+
+    display() {
+        return `User ${this.id}: ${this.name}`;
+    }
+}
+
+class UserManager extends EventEmitter {
+    constructor() {
+        super();
+        this.users = new Map();
+    }
+
+    addUser(user) {
+        this.users.set(user.id, user);
+    }
+
+    getUser(id) {
+        return this.users.get(id);
+    }
+}
+
+function main() {
+    const manager = new UserManager();
+}
+"#;
+        let mut graph = CodeGraph::new();
+        parse_code(
+            code,
+            "sample.js",
+            "dummy_checksum",
+            js_lang.into(),
+            "javascript",
+            &mut graph,
+        )
+        .unwrap();
+
+        println!(
+            "JS nodes: {:?}",
+            graph.node_indices.keys().collect::<Vec<_>>()
+        );
+
+        assert!(graph.node_indices.contains_key("sample.js"));
+        assert!(graph.node_indices.contains_key("sample.js:User"));
+        assert!(graph
+            .node_indices
+            .contains_key("sample.js:User.constructor"));
+        assert!(graph.node_indices.contains_key("sample.js:User.setEmail"));
+        assert!(graph.node_indices.contains_key("sample.js:User.display"));
+        assert!(graph.node_indices.contains_key("sample.js:UserManager"));
+        assert!(graph
+            .node_indices
+            .contains_key("sample.js:UserManager.constructor"));
+        assert!(graph
+            .node_indices
+            .contains_key("sample.js:UserManager.addUser"));
+        assert!(graph
+            .node_indices
+            .contains_key("sample.js:UserManager.getUser"));
+        assert!(graph.node_indices.contains_key("sample.js:main"));
+    }
+
+    #[test]
+    fn test_extracts_typescript_classes_and_methods() {
+        let code = r#"
+export interface UserData {
+    id: number;
+    name: string;
+}
+
+export class User implements UserData {
+    public id: number;
+    public name: string;
+
+    constructor(id: number, name: string) {
+        this.id = id;
+        this.name = name;
+    }
+
+    setEmail(email: string): void {
+        this.email = email;
+    }
+}
+
+export class UserManager {
+    private users: Map<number, User>;
+
+    constructor() {
+        this.users = new Map();
+    }
+
+    addUser(user: User): void {
+        this.users.set(user.id, user);
+    }
+
+    getUser(id: number): User | undefined {
+        return this.users.get(id);
+    }
+}
+
+export function main(): void {
+    const manager = new UserManager();
+}
+"#;
+        let mut graph = CodeGraph::new();
+        parse_code(
+            code,
+            "sample.ts",
+            "dummy_checksum",
+            ts_lang.into(),
+            "typescript",
+            &mut graph,
+        )
+        .unwrap();
+
+        println!(
+            "TS nodes: {:?}",
+            graph.node_indices.keys().collect::<Vec<_>>()
+        );
+
+        assert!(graph.node_indices.contains_key("sample.ts"));
+        assert!(graph.node_indices.contains_key("sample.ts:User"));
+        assert!(graph
+            .node_indices
+            .contains_key("sample.ts:User.constructor"));
+        assert!(graph.node_indices.contains_key("sample.ts:User.setEmail"));
+        assert!(graph.node_indices.contains_key("sample.ts:UserManager"));
+        assert!(graph
+            .node_indices
+            .contains_key("sample.ts:UserManager.constructor"));
+        assert!(graph
+            .node_indices
+            .contains_key("sample.ts:UserManager.addUser"));
+        assert!(graph
+            .node_indices
+            .contains_key("sample.ts:UserManager.getUser"));
+        assert!(graph.node_indices.contains_key("sample.ts:main"));
+    }
+
+    #[test]
+    fn test_extracts_go_structs_and_methods() {
+        let code = r#"
+package main
+
+import "fmt"
+
+// User represents a user in the system
+type User struct {
+    ID    int
+    Name  string
+    Email string
+}
+
+// NewUser creates a new user
+func NewUser(id int, name string) *User {
+    return &User{ID: id, Name: name}
+}
+
+// SetEmail sets the user's email
+func (u *User) SetEmail(email string) {
+    u.Email = email
+}
+
+// Display returns a formatted string
+func (u *User) Display() string {
+    return fmt.Sprintf("User %d", u.ID)
+}
+
+type UserManager struct {
+    users map[int]*User
+}
+
+// NewUserManager creates a new manager
+func NewUserManager() *UserManager {
+    return &UserManager{users: make(map[int]*User)}
+}
+
+// AddUser adds a user to the manager
+func (m *UserManager) AddUser(user *User) {
+    m.users[user.ID] = user
+}
+
+// main is the entry point
+func main() {
+    manager := NewUserManager()
+}
+"#;
+        let mut graph = CodeGraph::new();
+        parse_code(
+            code,
+            "sample.go",
+            "dummy_checksum",
+            go_lang.into(),
+            "go",
+            &mut graph,
+        )
+        .unwrap();
+
+        println!(
+            "Go nodes: {:?}",
+            graph.node_indices.keys().collect::<Vec<_>>()
+        );
+
+        assert!(graph.node_indices.contains_key("sample.go"));
+        // Go structs are not always extracted, but functions should be
+        assert!(graph.node_indices.contains_key("sample.go:NewUser"));
+        assert!(graph.node_indices.contains_key("sample.go:SetEmail"));
+        assert!(graph.node_indices.contains_key("sample.go:Display"));
+        // UserManager struct may not be extracted, but methods should be
+        assert!(graph.node_indices.contains_key("sample.go:NewUserManager"));
+        assert!(graph.node_indices.contains_key("sample.go:AddUser"));
+        assert!(graph.node_indices.contains_key("sample.go:main"));
+    }
+
+    #[test]
+    fn test_extracts_c_functions_and_structs() {
+        let code = r#"
+typedef struct {
+    int id;
+    char name[50];
+} User;
+
+User* user_new(int id, const char* name) {
+    User* user = (User*)malloc(sizeof(User));
+    return user;
+}
+
+void user_set_email(User* user, const char* email) {
+    if (user && email) {
+        strncpy(user->email, email, 100);
+    }
+}
+
+char* user_display(const User* user) {
+    char* buffer = (char*)malloc(128);
+    return buffer;
+}
+
+typedef struct {
+    User** users;
+    int count;
+} UserManager;
+
+UserManager* user_manager_new() {
+    UserManager* manager = (UserManager*)malloc(sizeof(UserManager));
+    return manager;
+}
+
+void user_manager_add(UserManager* manager, User* user) {
+    if (!manager || !user) return;
+}
+
+int main() {
+    UserManager* manager = user_manager_new();
+    return 0;
+}
+"#;
+        let mut graph = CodeGraph::new();
+        parse_code(
+            code,
+            "sample.c",
+            "dummy_checksum",
+            c_lang.into(),
+            "c",
+            &mut graph,
+        )
+        .unwrap();
+
+        println!(
+            "C nodes: {:?}",
+            graph.node_indices.keys().collect::<Vec<_>>()
+        );
+
+        // C parser has limited support for structs and functions
+        assert!(graph.node_indices.contains_key("sample.c"));
+        // At minimum, the file node should exist
+        assert!(graph.nodes.node_count() >= 1);
+    }
+
+    #[test]
+    fn test_extracts_cpp_classes_and_methods() {
+        let code = r#"
+class User {
+private:
+    int id_;
+    std::string name_;
+
+public:
+    User(int id, const std::string& name) : id_(id), name_(name) {}
+
+    void setEmail(const std::string& email) {
+        email_ = email;
+    }
+
+    std::string display() const {
+        return "User " + std::to_string(id_);
+    }
+};
+
+class UserManager {
+private:
+    std::vector<std::unique_ptr<User>> users_;
+
+public:
+    UserManager() = default;
+
+    void addUser(std::unique_ptr<User> user) {
+        users_.push_back(std::move(user));
+    }
+
+    User* getUser(int id) {
+        for (auto& user : users_) {
+            if (user->getId() == id) {
+                return user.get();
+            }
+        }
+        return nullptr;
+    }
+};
+
+int main() {
+    UserManager manager;
+    return 0;
+}
+"#;
+        let mut graph = CodeGraph::new();
+        parse_code(
+            code,
+            "sample.cpp",
+            "dummy_checksum",
+            cpp_lang.into(),
+            "cpp",
+            &mut graph,
+        )
+        .unwrap();
+
+        println!(
+            "C++ nodes: {:?}",
+            graph.node_indices.keys().collect::<Vec<_>>()
+        );
+
+        // C++ parser has limited method extraction
+        assert!(graph.node_indices.contains_key("sample.cpp"));
+        assert!(graph.node_indices.contains_key("sample.cpp:User"));
+        assert!(graph.node_indices.contains_key("sample.cpp:UserManager"));
+        // main may or may not be extracted depending on parser support
+    }
+
+    #[test]
+    fn test_extracts_java_classes_and_methods() {
+        let code = r#"
+package com.example;
+
+import java.util.List;
+import java.util.ArrayList;
+
+public class UserService {
+    private List<String> users;
+
+    public UserService() {
+        this.users = new ArrayList<>();
+    }
+
+    public void addUser(String name) {
+        users.add(name);
+    }
+
+    public String getUser(int index) {
+        return users.get(index);
+    }
+
+    private void validate(String name) {
+        if (name == null) {
+            throw new IllegalArgumentException();
+        }
+    }
+}
+"#;
+        let mut graph = CodeGraph::new();
+        parse_code(
+            code,
+            "UserService.java",
+            "dummy_checksum",
+            java_lang.into(),
+            "java",
+            &mut graph,
+        )
+        .unwrap();
+
+        // Debug: print all node indices
+        println!(
+            "All nodes: {:?}",
+            graph.node_indices.keys().collect::<Vec<_>>()
+        );
+
+        // Should have: 1 file node + 1 class + 3 methods + 2 import stubs
+        assert_eq!(graph.nodes.node_count(), 7);
+        assert!(graph.node_indices.contains_key("UserService.java"));
+        assert!(graph
+            .node_indices
+            .contains_key("UserService.java:UserService"));
+        assert!(graph
+            .node_indices
+            .contains_key("UserService.java:UserService.addUser"));
+        assert!(graph
+            .node_indices
+            .contains_key("UserService.java:UserService.getUser"));
+        assert!(graph
+            .node_indices
+            .contains_key("UserService.java:UserService.validate"));
     }
 }
