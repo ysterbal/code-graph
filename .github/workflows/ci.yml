@@ -1,0 +1,201 @@
+name: Rust CI/CD Pipeline
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ============================================================================
+  # JOB 1: Code Quality Checks (fmt + clippy)
+  # ============================================================================
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@v1
+        with:
+          toolchain: stable
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Check code formatting
+        run: cargo fmt --check
+      
+      - name: Run clippy with deny warnings
+        run: cargo clippy -- -D warnings
+      
+      - name: Run clippy for all targets
+        run: cargo clippy --all-targets -- -D warnings
+
+  # ============================================================================
+  # JOB 2: Build and Test (Multiple Rust Versions)
+  # ============================================================================
+  build-and-test:
+    name: Build & Test (${{ matrix.rust }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: [stable, beta]
+      fail-fast: false
+    
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Install Rust toolchain (${{ matrix.rust }})
+        uses: dtolnay/rust-action@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          components: rustfmt, clippy
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Build all targets
+        run: cargo build --all-targets
+      
+      - name: Run all tests with output
+        run: cargo test --all-targets -- --nocapture
+      
+      - name: Run doc tests
+        run: cargo test --doc
+
+  # ============================================================================
+  # JOB 3: Dependency Check
+  # ============================================================================
+  dependency-check:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@v1
+        with:
+          toolchain: stable
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Check for outdated dependencies
+        run: cargo update --workspace --dry-run
+      
+      - name: Audit for security vulnerabilities
+        uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================================
+  # JOB 4: Build Binaries (Optional - for release artifacts)
+  # ============================================================================
+  build-binaries:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+    needs: [code-quality, build-and-test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@v1
+        with:
+          toolchain: stable
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Build release binaries
+        run: cargo build --release --all-targets
+      
+      - name: Upload MCP Server binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-server-linux
+          path: target/release/mcp-server
+      
+      - name: Upload API Server binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-server-linux
+          path: target/release/api-server
+
+  # ============================================================================
+  # JOB 5: MSRV (Minimum Supported Rust Version) Check
+  # ============================================================================
+  msrv-check:
+    name: MSRV Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Install Rust toolchain (1.70.0)
+        uses: dtolnay/rust-action@v1
+        with:
+          toolchain: 1.70.0
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Check MSRV compatibility
+        run: cargo check
+
+  # ============================================================================
+  # JOB 6: Documentation Build (Optional)
+  # ============================================================================
+  docs-build:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@v1
+        with:
+          toolchain: stable
+      
+      - name: Build documentation
+        run: cargo doc --no-deps
+      
+      - name: Upload documentation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rust-docs
+          path: target/doc

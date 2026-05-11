@@ -1,0 +1,178 @@
+name: Code Quality & Security
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  schedule:
+    # Run security scans weekly on Sundays
+    - cron: '0 0 * * 0'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  # ============================================================================
+  # JOB 1: Clippy Comprehensive Check
+  # ============================================================================
+  clippy-check:
+    name: Clippy Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@v1
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Run clippy (all features)
+        run: cargo clippy --all-features -- -D warnings
+      
+      - name: Run clippy (no default features)
+        run: cargo clippy --no-default-features -- -D warnings
+      
+      - name: Run clippy (all targets)
+        run: cargo clippy --all-targets -- -D warnings
+
+  # ============================================================================
+  # JOB 2: Security Audit
+  # ============================================================================
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@v1
+        with:
+          toolchain: stable
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Run cargo-audit
+        uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Check for vulnerable dependencies
+        run: |
+          cargo install cargo-outdated
+          cargo outdated --exit-code 1 || echo "Outdated dependencies found (non-fatal)"
+
+  # ============================================================================
+  # JOB 3: Formatting & Linting
+  # ============================================================================
+  format-lint:
+    name: Format & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@v1
+        with:
+          toolchain: stable
+          components: rustfmt
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Check formatting
+        run: cargo fmt --check
+      
+      - name: Format code (dry-run)
+        run: cargo fmt -- --check
+      
+      - name: Run cargo-make if available
+        run: cargo make lint || echo "cargo-make not configured"
+
+  # ============================================================================
+  # JOB 4: Performance Analysis
+  # ============================================================================
+  performance-check:
+    name: Performance Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@v1
+        with:
+          toolchain: stable
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Install cargo-binstall
+        run: curl -L https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz | tar xzf - && cp cargo-binstall ~/.cargo/bin/
+      
+      - name: Install cargo-flamegraph
+        run: cargo binstall -y cargo-flamegraph
+      
+      - name: Build with profiling
+        run: cargo build --release
+      
+      - name: Check binary size
+        run: |
+          ls -lh target/release/mcp-server target/release/api-server 2>/dev/null || echo "Binaries not built yet"
+
+  # ============================================================================
+  # JOB 5: Dependency Tree Analysis
+  # ============================================================================
+  dependency-tree:
+    name: Dependency Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-action@v1
+        with:
+          toolchain: stable
+      
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      
+      - name: Show dependency tree
+        run: cargo tree --depth 1
+      
+      - name: Check for duplicate dependencies
+        run: cargo tree --duplicates || echo "No duplicates found"

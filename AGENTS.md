@@ -24,8 +24,9 @@ A **local-first CLI tool** built in Rust that creates Knowledge Graphs from code
 
 ### Key Capabilities
 
-- **Multi-language parsing**: Python, Rust, JavaScript/TypeScript, Go, C/C++
+- **Multi-language parsing**: Python, Rust, JavaScript/TypeScript, Go, Java, C/C++
 - **Dependency tracking**: Imports, function calls, class inheritance
+- **Java support**: Classes, methods (including constructors), imports, inheritance
 - **Local-first storage**: SQLite with checksum-based incremental updates
 - **LLM integration**: Context-aware prompts with token budgeting
 - **Dual API support**: MCP Server (Claude/Cursor) + REST API
@@ -38,7 +39,7 @@ A **local-first CLI tool** built in Rust that creates Knowledge Graphs from code
 | **Language** | Rust 2021 Edition | Performance, memory safety |
 | **Async Runtime** | `tokio` | Async/await concurrency |
 | **CLI Framework** | `clap` (v4) | Command-line parsing |
-| **Code Parsing** | `tree-sitter` + language bindings | AST extraction |
+| **Code Parsing** | `tree-sitter` + language bindings (Python, Rust, JS/TS, Go, Java, C/C++) | AST extraction |
 | **Graph Library** | `petgraph` (v0.6) | Graph data structures |
 | **Database** | `sqlx` + SQLite | Local persistence |
 | **HTTP Client** | `reqwest` | LLM API calls |
@@ -429,7 +430,7 @@ let query = format!("SELECT * FROM nodes WHERE id = '{}'", node_id);
 
 ```rust
 // ✅ DO: Whitelist file extensions
-let valid_exts = ["py", "rs", "js", "ts", "go", "cpp", "c", "h"];
+let valid_exts = ["py", "rs", "js", "ts", "java", "go", "cpp", "c", "h"];
 if valid_exts.contains(&ext) {
     // Process file
 }
