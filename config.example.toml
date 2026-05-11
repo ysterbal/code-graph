@@ -1,0 +1,40 @@
+# Code Graph Tool - Example Configuration File
+# Copy this file to .graphrag.toml and customize as needed
+
+[database]
+# Path to SQLite database file (relative to project root)
+path = "graphrag.db"
+
+# Maximum number of database connections
+max_connections = 5
+
+[llm]
+# Base URL for LLM API (can be overridden by OPENAI_BASE_URL env var)
+base_url = "https://api.openai.com/v1"
+
+# API key for authentication (recommended to use environment variable instead)
+# api_key = "your-api-key-here"
+
+# Model to use for analysis (can be overridden by OPENAI_MODEL env var)
+model = "gpt-4o-mini"
+
+[parser]
+# Maximum depth for dependency context retrieval (default: 2)
+max_depth = 2
+
+# Default maximum tokens for context generation (default: 2000)
+max_tokens = 2000
+
+# List of supported file extensions
+supported_languages = [
+    "py",   # Python
+    "rs",   # Rust
+    "js",   # JavaScript
+    "ts",   # TypeScript
+    "go",   # Go
+    "cpp",  # C++
+    "cc",   # C++
+    "cxx",  # C++
+    "c",    # C
+    "h",    # C Header
+]

@@ -1,0 +1,36 @@
+[package]
+name = "code-graph-tool"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+clap = { version = "4", features = ["derive"] }
+tree-sitter = "0"
+tree-sitter-python = "0"
+tree-sitter-rust = "0"
+tree-sitter-javascript = "0"
+tree-sitter-typescript = "0"
+tree-sitter-go = "0"
+tree-sitter-cpp = "0"
+tree-sitter-c = "0"
+petgraph = "0.6"
+sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "sqlite"] }
+reqwest = { version = "0.11", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0"
+anyhow = "1"
+walkdir = "2"
+axum = "0.7"
+tiktoken-rs = "0.5"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+toml = "0.8"
+
+[[bin]]
+name = "mcp-server"
+path = "src/tools/mcp-server.rs"
+
+[[bin]]
+name = "api-server"
+path = "src/tools/api-server.rs"
