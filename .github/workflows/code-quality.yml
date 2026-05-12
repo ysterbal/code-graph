@@ -23,9 +23,8 @@ jobs:
       - uses: actions/checkout@v6
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
           components: clippy, rustfmt
       
       - name: Cache cargo registry
@@ -56,9 +55,7 @@ jobs:
       - uses: actions/checkout@v6
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -89,9 +86,8 @@ jobs:
       - uses: actions/checkout@v6
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
           components: rustfmt
       
       - name: Cache cargo registry
@@ -122,9 +118,7 @@ jobs:
       - uses: actions/checkout@v6
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -158,9 +152,7 @@ jobs:
       - uses: actions/checkout@v6
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Cache cargo registry
         uses: actions/cache@v4
