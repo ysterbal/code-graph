@@ -129,11 +129,8 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       
-      - name: Install cargo-binstall
-        run: curl -L https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz | tar xzf - && cp cargo-binstall ~/.cargo/bin/
-      
-      - name: Install cargo-flamegraph
-        run: cargo binstall -y cargo-flamegraph
+      - name: Install cargo-flamegraph (optional)
+        run: cargo install cargo-flamegraph || echo "cargo-flamegraph installation skipped"
       
       - name: Build with profiling
         run: cargo build --release
