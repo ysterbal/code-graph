@@ -20,16 +20,15 @@ jobs:
     name: Clippy Analysis
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v5
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
           components: clippy, rustfmt
       
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -53,15 +52,13 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v5
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -70,7 +67,7 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       
       - name: Run cargo-audit
-        uses: rustsec/audit-check@v2
+        uses: rustsec/audit-check@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       
@@ -86,16 +83,15 @@ jobs:
     name: Format & Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v5
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
           components: rustfmt
       
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -119,15 +115,13 @@ jobs:
     name: Performance Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v5
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -135,11 +129,8 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
       
-      - name: Install cargo-binstall
-        run: curl -L https://github.com/cargo-bins/cargo-binstall/releases/latest/download/cargo-binstall-x86_64-unknown-linux-musl.tgz | tar xzf - && cp cargo-binstall ~/.cargo/bin/
-      
-      - name: Install cargo-flamegraph
-        run: cargo binstall -y cargo-flamegraph
+      - name: Install cargo-flamegraph (optional)
+        run: cargo install cargo-flamegraph || echo "cargo-flamegraph installation skipped"
       
       - name: Build with profiling
         run: cargo build --release
@@ -155,15 +146,13 @@ jobs:
     name: Dependency Analysis
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v5
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry

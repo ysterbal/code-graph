@@ -17,15 +17,13 @@ jobs:
     name: Code Quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v5
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -54,16 +52,15 @@ jobs:
       fail-fast: false
     
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v5
       
       - name: Install Rust toolchain (${{ matrix.rust }})
-        uses: dtolnay/rust-action@v1
+        uses: dtolnay/rust-toolchain@${{ matrix.rust }}
         with:
-          toolchain: ${{ matrix.rust }}
           components: rustfmt, clippy
       
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -87,15 +84,13 @@ jobs:
     name: Dependency Audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v5
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -107,7 +102,7 @@ jobs:
         run: cargo update --workspace --dry-run
       
       - name: Audit for security vulnerabilities
-        uses: rustsec/audit-check@v2
+        uses: rustsec/audit-check@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -120,15 +115,13 @@ jobs:
     needs: [code-quality, build-and-test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v5
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Cache cargo registry
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cargo/registry
@@ -158,10 +151,10 @@ jobs:
     name: MSRV Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v5
       
       - name: Install Rust toolchain (1.70.0)
-        uses: dtolnay/rust-action@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: 1.70.0
       
@@ -184,12 +177,10 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v5
       
       - name: Install Rust toolchain
-        uses: dtolnay/rust-action@v1
-        with:
-          toolchain: stable
+        uses: dtolnay/rust-toolchain@stable
       
       - name: Build documentation
         run: cargo doc --no-deps
